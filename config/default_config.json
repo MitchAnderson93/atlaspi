@@ -1,0 +1,29 @@
+{
+    "project_name": "atlaspi",
+    "version": "1.0.0",
+    "debug": true,
+    "logging": {
+      "log_level": "info",
+      "log_file": "/var/log/atlas.log"
+    },
+    "tasks": [ 
+        {
+          "name": "Monitor API Health",
+          "action": "check_api_health",
+          "condition_type": "time",
+          "condition_value": "00:00"
+        }
+    ],
+    "hardware": {
+      "bluetooth": {
+        "enabled": true,
+        "device_name": "AtlasPi"
+      }
+    },
+    "deployment": {
+      "update_interval": "daily",
+      "repository_url": "https://github.com/MitchAnderson93/atlaspi",
+      "auto_restart_on_update": true
+    }
+  }
+  
