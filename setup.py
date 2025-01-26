@@ -87,8 +87,6 @@ def seed_tasks(cursor):
 # Main process of the app
 def start_app():
     logging.info("Starting the main app process...")
-    # Placeholder for your main app logic
-    # Example: process_tasks() or start a service loop
     logging.info("App is running. Ready to process tasks.")
 
 # Entry point
