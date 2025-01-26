@@ -74,13 +74,22 @@ def initialize_database():
 
 # Seed tasks from default_config.json
 def seed_tasks(cursor):
+    # Check if the config contains tasks
     if "tasks" in config:
-        for task in config["tasks"]:
-            cursor.execute("""
-            INSERT INTO tasks (name, action, condition_type, condition_value)
-            VALUES (?, ?, ?, ?)
-            """, (task["name"], task["action"], task["condition_type"], task["condition_value"]))
-        logging.info(f"Seeded task: {task['name']}")
+        tasks = config["tasks"]
+        logging.info(f"Found {len(tasks)} tasks in the configuration.")
+        
+        # Iterate through tasks and insert them into the database
+        for task in tasks:
+            try:
+                logging.info(f"Inserting task: {task['name']}")
+                cursor.execute("""
+                INSERT INTO tasks (name, action, condition_type, condition_value)
+                VALUES (?, ?, ?, ?)
+                """, (task["name"], task["action"], task["condition_type"], task["condition_value"]))
+                logging.info(f"Successfully seeded task: {task['name']}")
+            except Exception as e:
+                logging.error(f"Failed to insert task: {task['name']}. Error: {e}")
     else:
         logging.warning("No tasks found in default configuration.")
 
