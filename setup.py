@@ -2,6 +2,7 @@ import os
 import sqlite3
 import json
 import logging
+import time
 from datetime import datetime
 import platform  # To detect the system
 
@@ -96,12 +97,25 @@ def seed_tasks(cursor):
 # Main process of the app
 def start_app():
     logging.info("Starting the main app process...")
-    logging.info("App is running. Ready to process tasks.")
+    try:
+        while True:
+            # Placeholder for actual periodic tasks
+            logging.info("App is running. Performing periodic tasks...")
+
+            # Simulate a task or delay
+            time.sleep(60)  # Run the loop every 60 seconds
+    except KeyboardInterrupt:
+        logging.info("App interrupted and shutting down.")
+    except Exception as e:
+        logging.error(f"An error occurred in the main loop: {e}")
 
 # Entry point
 if __name__ == "__main__":
     try:
+        # Run database initialization once at startup
         initialize_database()
+
+        # Start the main application loop
         start_app()
     except Exception as e:
         logging.error(f"An unexpected error occurred: {e}")
