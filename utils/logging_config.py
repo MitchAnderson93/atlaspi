@@ -23,7 +23,7 @@ def setup_logging(log_path, debug_mode=False):
         root_level = logging.DEBUG
     else:
         console_handler.setLevel(logging.WARNING)  # Only show warnings/errors in normal mode
-        root_level = logging.INFO
+        root_level = logging.WARNING  # Root logger should also be WARNING in normal mode
 
     # Configure root logger
     logging.basicConfig(level=root_level, handlers=[file_handler, console_handler])
