@@ -233,13 +233,12 @@ def show_menu_with_planet():
         # Fallback if planet rendering fails
         print(f"           {strings.MENU_HEADER}")
     
-    print("")
+    print()  # Add space before separator
+    print()  # Replace separator with blank line
     
-    # Status with small planet if running
+    # Status line (clean, no planet interference)
     if service_running:
-        planet_line = planet_renderer.render_single_line(planet_phase)
-        status_line = f"{planet_line}  {strings.MENU_SERVICE_RUNNING}"
-        print(status_line)
+        print(strings.MENU_SERVICE_RUNNING)
     else:
         print(strings.MENU_SERVICE_STOPPED)
 
@@ -267,7 +266,7 @@ def show_menu(debug_mode=False):
             print(f"3. {strings.MENU_VIEW_LOGS}")
             print(f"4. {strings.MENU_CLEAR_FILES}")
     
-    print("="*50)
+    print()  # Replace separator with blank line
 
 def get_user_choice(debug_mode=False):
     """Get and validate user menu choice"""
