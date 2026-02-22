@@ -32,23 +32,8 @@ def main():
         # Show logo
         print_logo()
         
-        # Run interactive menu
-        should_start_service = run_interactive_menu(debug_mode=args.debug)
-        
-        if not should_start_service:
-            return  # User chose to exit
-        
-        # Load configuration
-        config = load_config(paths['config_path'])
-        
-        # Log startup message
-        logging.info(strings.APP_STARTING)
-        
-        # Initialize database
-        initialize_database(paths['db_path'], config)
-
-        # Start the main application loop
-        run_application_loop(paths['db_path'], paths['log_path'], debug_mode=args.debug)
+        # Run interactive menu (this now handles everything internally)
+        run_interactive_menu(debug_mode=args.debug)
         
     except Exception as e:
         logging.error(strings.APP_STARTUP_ERROR.format(e))

@@ -7,11 +7,10 @@ from utils.common import strings
 from utils.database import get_tasks, update_task_last_run
 
 
-def run_application_loop(db_path, log_path, debug_mode=False):
+def run_application_loop(db_path, log_path, debug_mode=False, stop_flag=None):
     """Main application loop that processes tasks periodically"""
     
     logging.info(strings.SERVICE_STARTING)
-    print("AtlasPi is running. Press Ctrl+C to stop.")
     
     if debug_mode:
         logging.info(strings.PATHS_LOG_FILE.format(log_path))
@@ -20,6 +19,11 @@ def run_application_loop(db_path, log_path, debug_mode=False):
     try:
         loop_count = 0
         while True:
+            # Check if we should stop
+            if stop_flag and stop_flag.is_set():
+                logging.info("Service stop requested")
+                break
+                
             loop_count += 1
             
             # Log status every 6 loops (1 minute) - only to log file in normal mode
@@ -40,12 +44,15 @@ def run_application_loop(db_path, log_path, debug_mode=False):
             # TODO: Add actual task processing here
             # For now, just simulate periodic work
             time.sleep(10)  # Check every 10 seconds
+            # For now, just simulate periodic work
+            time.sleep(10)  # Check every 10 seconds
             
     except KeyboardInterrupt:
-        print("\nShutting down...")
-        logging.info(strings.SERVICE_INTERRUPTED)
+        logging.info("Service interrupted by Ctrl+C")
     except Exception as e:
         logging.error(strings.SERVICE_ERROR.format(e))
+    finally:
+        logging.info("AtlasPi service stopped")
 
 
 def process_scheduled_tasks(db_path):
