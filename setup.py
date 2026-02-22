@@ -6,7 +6,6 @@ from utils.config import load_config, get_config_paths
 from utils.logging_config import setup_logging
 from utils.database import initialize_database
 from utils.app import run_application_loop
-from utils.ui import print_logo
 from utils.menu import run_interactive_menu
 from utils.common import strings
 
@@ -28,9 +27,6 @@ def main():
         
         # Setup logging with debug mode
         setup_logging(paths['log_path'], debug_mode=args.debug)
-        
-        # Show logo
-        print_logo()
         
         # Run interactive menu (this now handles everything internally)
         run_interactive_menu(debug_mode=args.debug)

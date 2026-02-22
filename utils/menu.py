@@ -6,6 +6,8 @@ import subprocess
 import logging
 import threading
 import time
+import math
+import shutil
 from utils.config import get_config_paths
 from utils.config import load_config
 from utils.database import initialize_database
@@ -16,21 +18,249 @@ from utils.common import strings
 service_thread = None
 service_running = False
 stop_service_flag = threading.Event()
+planet_animation_active = False
+planet_thread = None
+planet_stop_flag = threading.Event()
+
+class PlanetRenderer:
+    """Simple planet animation renderer"""
+    
+    def __init__(self, radius=6):
+        self.radius = radius
+        self.animation_running = False
+        
+    def supports_ansi(self):
+        return sys.stdout.isatty()
+        
+    def hide_cursor(self):
+        if self.supports_ansi():
+            sys.stdout.write('\033[?25l')
+            sys.stdout.flush()
+            
+    def show_cursor(self):
+        if self.supports_ansi():
+            sys.stdout.write('\033[?25h')
+            sys.stdout.flush()
+            
+    def move_cursor_to(self, row, col):
+        if self.supports_ansi():
+            sys.stdout.write(f'\033[{row};{col}H')
+            sys.stdout.flush()
+        
+    def clamp(self, x, lo, hi):
+        return max(lo, min(hi, x))
+        
+    def render_frame(self, phase=0.0):
+        """Render a small planet frame"""
+        w = self.radius * 2 + 1
+        h = self.radius
+        
+        shade = " .:-=+*#%@"
+        tex = ".,'`^:;_-+=*#%@"
+        
+        lines = []
+        
+        # Light direction
+        lx, ly, lz = (-0.6, -0.4, 1.0)
+        ll = math.sqrt(lx * lx + ly * ly + lz * lz)
+        lx, ly, lz = (lx / ll, ly / ll, lz / ll)
+        
+        for y in range(-h, h + 1):
+            row = []
+            for x in range(-w, w + 1):
+                nx = x / w
+                ny = y / h
+                d2 = nx * nx + ny * ny
+                if d2 > 1.0:
+                    row.append(" ")
+                    continue
+                    
+                z = math.sqrt(1.0 - d2)
+                
+                # Normal and shading
+                diff = self.clamp(nx * lx + ny * ly + z * lz, 0.0, 1.0)
+                si = int(diff * (len(shade) - 1))
+                base = shade[si]
+                
+                # Longitude/latitude with rotation
+                lon = math.atan2(nx, z)
+                lat = math.asin(self.clamp(ny, -1.0, 1.0))
+                lon2 = lon + phase
+                
+                # Procedural texture
+                c = (
+                    math.sin(3.0 * lon2) +
+                    0.7 * math.sin(2.0 * lat + 0.8) +
+                    0.6 * math.cos(4.0 * lon2 - 1.2) +
+                    0.4 * math.sin(5.0 * lon2 + 3.0 * lat)
+                )
+                
+                land = c > 0.9
+                
+                if land:
+                    t = self.clamp((c + 2.5) / 5.0, 0.0, 1.0)
+                    ti = int(t * (len(tex) - 1))
+                    ch = tex[ti]
+                    if diff > 0.75 and ch in ".,'`":
+                        ch = "*"
+                else:
+                    ch = base
+                    
+                # Rim darkening
+                rim = self.clamp((z - 0.08) / 0.92, 0.0, 1.0)
+                if rim < 0.25:
+                    ch = "."
+                    
+                row.append(ch)
+            lines.append("".join(row).rstrip())
+        return lines
+        
+    def render_single_line(self, phase=0.0):
+        """Render a single line representation of the planet"""
+        frame = self.render_frame(phase)
+        if frame:
+            # Find the middle line with most content
+            mid_idx = len(frame) // 2
+            return frame[mid_idx] if mid_idx < len(frame) else ""
+        return ""
+        
+    def animate_continuously(self, stop_flag, fps=20):
+        """Background animation loop for continuous planet spinning"""
+        frame_delay = 1.0 / fps
+        start_time = time.time()
+        
+        try:
+            self.hide_cursor()
+            
+            while not stop_flag.is_set():
+                current_time = time.time()
+                phase = (current_time - start_time) * 1.6  # Same speed as standalone
+                
+                # Render new frame
+                planet_frame = self.render_frame(phase)
+                
+                if planet_frame and self.supports_ansi():
+                    # Position planet starting at row 3 (after top border)
+                    for i, line in enumerate(planet_frame):
+                        row = 3 + i  # Start from row 3
+                        padding = (50 - len(line)) // 2
+                        display_line = " " * max(0, padding) + line
+                        
+                        # Move cursor and update line
+                        self.move_cursor_to(row, 1)
+                        sys.stdout.write('\033[K')  # Clear line
+                        sys.stdout.write(display_line)
+                    
+                    # Add ATLAS title below the planet (but don't overwrite menu)
+                    title_row = 3 + len(planet_frame)
+                    title_line = "A T L A S"
+                    padding = (50 - len(title_line)) // 2
+                    title_display = " " * max(0, padding) + title_line
+                    self.move_cursor_to(title_row, 1)
+                    sys.stdout.write('\033[K')
+                    sys.stdout.write(title_display)
+                    
+                    # Only update status line if service is running (at specific row, don't interfere with menu)
+                    if service_running:
+                        status_row = title_row + 2  # Two rows below title
+                        planet_line = self.render_single_line(phase)
+                        status_line = f"{planet_line}  {strings.MENU_SERVICE_RUNNING}"
+                        self.move_cursor_to(status_row, 1)
+                        sys.stdout.write('\033[K')
+                        sys.stdout.write(status_line)
+                    
+                    sys.stdout.flush()
+                
+                time.sleep(frame_delay)
+                
+        except Exception:
+            pass  # Graceful degradation
+        finally:
+            self.show_cursor()
+        
+planet_renderer = PlanetRenderer(radius=6)
 
 
-def show_menu(debug_mode=False):
-    """Display the main menu options"""
+def start_planet_animation():
+    """Start background planet animation"""
+    global planet_animation_active, planet_thread, planet_stop_flag
+    
+    if not planet_renderer.supports_ansi() or planet_animation_active:
+        return
+        
+    planet_stop_flag.clear()
+    planet_animation_active = True
+    planet_thread = threading.Thread(
+        target=planet_renderer.animate_continuously,
+        args=(planet_stop_flag, 20),  # 20 FPS like standalone
+        daemon=True
+    )
+    planet_thread.start()
+
+def stop_planet_animation():
+    """Stop background planet animation"""
+    global planet_animation_active, planet_thread, planet_stop_flag
+    
+    if planet_animation_active and planet_thread:
+        planet_stop_flag.set()
+        planet_thread.join(timeout=1.0)
+        planet_animation_active = False
+        planet_renderer.show_cursor()
+
+def show_menu_with_planet():
+    """Display menu with animated planet header"""
     global service_running
     
+    # Get current time for initial animation
+    current_time = time.time()
+    planet_phase = current_time * 1.2  # Animation speed
+    
+    # Render initial planet frame
+    planet_frame = planet_renderer.render_frame(planet_phase)
+    
+    # Display planet with ATLAS title
+    if planet_frame:
+        # Center planet only
+        for i, line in enumerate(planet_frame):
+            padding = (50 - len(line)) // 2
+            print(" " * max(0, padding) + line)
+        
+        # Add ATLAS title below planet
+        title_line = "A T L A S"
+        padding = (50 - len(title_line)) // 2
+        print(" " * max(0, padding) + title_line)
+    else:
+        # Fallback if planet rendering fails
+        print(f"           {strings.MENU_HEADER}")
+    
+    print("")
+    
+    # Status with small planet if running
     if service_running:
-        print(strings.MENU_SERVICE_RUNNING)
+        planet_line = planet_renderer.render_single_line(planet_phase)
+        status_line = f"{planet_line}  {strings.MENU_SERVICE_RUNNING}"
+        print(status_line)
+    else:
+        print(strings.MENU_SERVICE_STOPPED)
+
+def show_menu(debug_mode=False):
+    """Display the main menu options with spinning planet"""
+    global service_running
+    
+    # Stop any existing animation to prevent interference
+    stop_planet_animation()
+    
+    # Show static planet header (no background animation)
+    show_menu_with_planet()
+    
+    # Menu options (same for both modes)
+    if service_running:
         print(f"1. {strings.MENU_STOP_SERVICE}")
         print(f"2. {strings.MENU_VIEW_LOGS}")
         print(f"3. {strings.MENU_EXIT}")
         if debug_mode:
             print(f"4. {strings.MENU_CLEAR_FILES}")
     else:
-        print(strings.MENU_SERVICE_STOPPED)
         print(f"1. {strings.MENU_START_SERVICE}")
         print(f"2. {strings.MENU_EXIT}")
         if debug_mode:
@@ -51,11 +281,17 @@ def get_user_choice(debug_mode=False):
     while True:
         try:
             choice = input(strings.SELECT_OPTION.format(max_option)).strip()
+            
+            # Stop planet animation when user provides input
+            stop_planet_animation()
+            
             if choice.isdigit() and 1 <= int(choice) <= max_option:
                 return int(choice)
             else:
                 print(strings.INVALID_CHOICE.format(max_option))
         except (KeyboardInterrupt, EOFError):
+            # Stop animation before exit
+            stop_planet_animation()
             print(f"\n{strings.EXITING}")
             return None
 
@@ -227,7 +463,10 @@ def run_interactive_menu(debug_mode=False):
                     
     except KeyboardInterrupt:
         print(f"\n{strings.SHUTTING_DOWN}")
+        stop_planet_animation()  # Stop planet animation on exit
         if service_running:
             stop_service_background()
     
+    # Clean up animation on normal exit
+    stop_planet_animation()
     return False  # Always return False since we handle everything internally now
