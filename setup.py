@@ -1,107 +1,54 @@
-import os
-import sqlite3
-import json
+"""AtlasPi Application Entry Point"""
+
 import logging
-from datetime import datetime
-import platform  # To detect the system
+import argparse
+from utils.config import load_config, get_config_paths
+from utils.logging_config import setup_logging
+from utils.database import initialize_database
+from utils.app import run_application_loop
+from utils.ui import print_logo
+from utils.menu import run_interactive_menu
+from utils.common import strings
 
-# Configure logging
-if platform.system() == "Linux" and os.uname()[1] == "raspberrypi":
-    LOG_PATH = "/var/log/atlaspi.log"  # Log file for Raspberry Pi
-else:
-    LOG_PATH = os.path.join(os.getcwd(), "atlaspi.log")  # Log file for development
 
-logging.basicConfig(
-    filename=LOG_PATH,
-    filemode="a",
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    level=logging.INFO
-)
-
-logging.info("Starting the AtlasPi setup script.")
-
-# Detect if the script is running on Raspberry Pi or a development machine
-if platform.system() == "Linux" and os.uname()[1] == "raspberrypi":
-    # Running on Raspberry Pi
-    DB_PATH = "/home/pi/atlaspi/tasks.db"
-    CONFIG_PATH = "/home/pi/atlaspi/config/default_config.json"
-else:
-    # Running on a development machine
-    DB_PATH = os.path.join(os.getcwd(), "tasks.db")
-    CONFIG_PATH = os.path.join(os.getcwd(), "config", "default_config.json")
-
-# Load default configuration
-def load_config():
+def main():
+    """Main entry point for AtlasPi application"""
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description='AtlasPi Task Management System')
+    parser.add_argument('--debug', action='store_true', help='Enable debug mode with verbose logging')
+    args = parser.parse_args()
+    
     try:
-        with open(CONFIG_PATH, "r") as file:
-            logging.info(f"Loading configuration from {CONFIG_PATH}")
-            return json.load(file)
-    except FileNotFoundError:
-        logging.error(f"Configuration file not found: {CONFIG_PATH}")
-        return {}
-
-config = load_config()
-
-# Initialize the SQLite database
-def initialize_database():
-    if not os.path.exists(DB_PATH):
-        logging.info(f"Database not found. Initializing at {DB_PATH}...")
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
-
-        # Create the tasks table
-        cursor.execute("""
-        CREATE TABLE tasks (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            action TEXT NOT NULL,
-            condition_type TEXT NOT NULL,
-            condition_value TEXT NOT NULL,
-            is_active BOOLEAN DEFAULT 1,
-            last_run TIMESTAMP DEFAULT NULL
-        )
-        """)
-        logging.info("Created tasks table.")
-
-        # Seed the database with tasks from the default config
-        seed_tasks(cursor)
-
-        conn.commit()
-        conn.close()
-        logging.info("Database initialized successfully.")
-    else:
-        logging.info("Database already exists. Skipping initialization.")
-
-# Seed tasks from default_config.json
-def seed_tasks(cursor):
-    # Check if the config contains tasks
-    if "tasks" in config:
-        tasks = config["tasks"]
-        logging.info(f"Found {len(tasks)} tasks in the configuration.")
+        # Get configuration paths
+        paths = get_config_paths()
         
-        # Iterate through tasks and insert them into the database
-        for task in tasks:
-            try:
-                logging.info(f"Inserting task: {task['name']}")
-                cursor.execute("""
-                INSERT INTO tasks (name, action, condition_type, condition_value)
-                VALUES (?, ?, ?, ?)
-                """, (task["name"], task["action"], task["condition_type"], task["condition_value"]))
-                logging.info(f"Successfully seeded task: {task['name']}")
-            except Exception as e:
-                logging.error(f"Failed to insert task: {task['name']}. Error: {e}")
-    else:
-        logging.warning("No tasks found in default configuration.")
-
-# Main process of the app
-def start_app():
-    logging.info("Starting the main app process...")
-    logging.info("App is running. Ready to process tasks.")
-
-# Entry point
-if __name__ == "__main__":
-    try:
-        initialize_database()
-        start_app()
+        # Clean up files in debug mode
+        if args.debug:
+            cleanup_debug_files(paths)
+        
+        # Setup logging with debug mode
+        setup_logging(paths['log_path'], debug_mode=args.debug)
+        
+        # Show logo
+        print_logo()
+        
+        # Run interactive menu (this now handles everything internally)
+        run_interactive_menu(debug_mode=args.debug)
+        
     except Exception as e:
-        logging.error(f"An unexpected error occurred: {e}")
+        logging.error(strings.APP_STARTUP_ERROR.format(e))
+
+
+def cleanup_debug_files(paths):
+    """Remove existing database and log files for fresh debug run"""
+    import os
+    files_to_remove = [paths['db_path'], paths['log_path']]
+    
+    for file_path in files_to_remove:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            print(f"DEBUG: Removed {file_path}")
+
+
+if __name__ == "__main__":
+    main()

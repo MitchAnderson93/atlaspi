@@ -11,7 +11,7 @@
           "name": "Monitor API Health",
           "action": "check_api_health",
           "condition_type": "time",
-          "condition_value": "00:00"
+          "condition_value": 0
         }
     ],
     "hardware": {
