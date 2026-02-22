@@ -7,10 +7,7 @@ from datetime import datetime
 import platform  # To detect the system
 
 # Configure logging
-if platform.system() == "Linux" and os.uname()[1] == "raspberrypi":
-    LOG_PATH = "/var/log/atlaspi.log"  # Log file for Raspberry Pi
-else:
-    LOG_PATH = os.path.join(os.getcwd(), "atlaspi.log")  # Log file for development
+LOG_PATH = os.path.join(os.getcwd(), "atlaspi.log")  # Always log to current directory
 
 logging.basicConfig(
     filename=LOG_PATH,
@@ -21,15 +18,9 @@ logging.basicConfig(
 
 logging.info("Starting the AtlasPi setup script.")
 
-# Detect if the script is running on Raspberry Pi or a development machine
-if platform.system() == "Linux" and os.uname()[1] == "raspberrypi":
-    # Running on Raspberry Pi
-    DB_PATH = "/home/pi/atlaspi/tasks.db"
-    CONFIG_PATH = "/home/pi/atlaspi/config/default_config.json"
-else:
-    # Running on a development machine
-    DB_PATH = os.path.join(os.getcwd(), "tasks.db")
-    CONFIG_PATH = os.path.join(os.getcwd(), "config", "default_config.json")
+# Use current directory for all paths
+DB_PATH = os.path.join(os.getcwd(), "tasks.db")
+CONFIG_PATH = os.path.join(os.getcwd(), "config", "default_config.json")
 
 # Load default configuration
 def load_config():
@@ -38,8 +29,20 @@ def load_config():
             logging.info(f"Loading configuration from {CONFIG_PATH}")
             return json.load(file)
     except FileNotFoundError:
-        logging.error(f"Configuration file not found: {CONFIG_PATH}")
-        return {}
+        logging.warning(f"Configuration file not found: {CONFIG_PATH}, using defaults")
+        # Return default config if file doesn't exist
+        return {
+            "project_name": "atlaspi",
+            "version": "1.0.0", 
+            "tasks": [
+                {
+                    "name": "Monitor API Health",
+                    "action": "check_api_health",
+                    "condition_type": "time",
+                    "condition_value": "00:00"
+                }
+            ]
+        }
 
 config = load_config()
 
@@ -97,25 +100,59 @@ def seed_tasks(cursor):
 # Main process of the app
 def start_app():
     logging.info("Starting the main app process...")
+    print("AtlasPi is running! Press Ctrl+C to stop.")
+    print(f"Logs are being written to: {LOG_PATH}")
+    print(f"Database location: {DB_PATH}")
+    
     try:
+        loop_count = 0
         while True:
-            # Placeholder for actual periodic tasks
-            logging.info("App is running. Performing periodic tasks...")
+            loop_count += 1
+            # Print status every 10 loops (10 seconds) so user knows it's working
+            if loop_count % 6 == 1:
+                print(f"[{datetime.now().strftime('%H:%M:%S')}] AtlasPi running... (loop {loop_count})")
+            
+            logging.info(f"App is running. Performing periodic tasks... (loop {loop_count})")
 
-            # Simulate a task or delay
-            time.sleep(60)  # Run the loop every 60 seconds
+            # Simulate a task or delay (shorter for responsiveness)
+            time.sleep(10)  # Check every 10 seconds instead of 60
     except KeyboardInterrupt:
+        print("\nAtlasPi shutting down...")
         logging.info("App interrupted and shutting down.")
     except Exception as e:
+        print(f"Error: {e}")
         logging.error(f"An error occurred in the main loop: {e}")
+
+# Print ASCII art logo
+def print_logo():
+    try:
+        logo_path = os.path.join(os.path.dirname(__file__), "config", "logo.txt")
+        with open(logo_path, "r", encoding="utf-8") as f:
+            logo = f.read()
+        print(logo)
+    except FileNotFoundError:
+        print("""  
+ ░▒▓██████▓▒░▒▓████████▓▒░▒▓█▓▒░       ░▒▓██████▓▒░ ░▒▓███████▓▒░      ░▒▓███████▓▒░░▒▓█▓▒░ 
+░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░   ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░             ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░ 
+░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░   ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░             ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░ 
+░▒▓████████▓▒░ ░▒▓█▓▒░   ░▒▓█▓▒░      ░▒▓████████▓▒░░▒▓██████▓▒░       ░▒▓███████▓▒░░▒▓█▓▒░ 
+░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░   ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░      ░▒▓█▓▒░      ░▒▓█▓▒░      ░▒▓█▓▒░ 
+░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░   ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░      ░▒▓█▓▒░      ░▒▓█▓▒░      ░▒▓█▓▒░ 
+░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░   ░▒▓████████▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓███████▓▒░       ░▒▓█▓▒░      ░▒▓█▓▒░ 
+        """)
+    print("=" * 80)
 
 # Entry point
 if __name__ == "__main__":
     try:
+        print_logo()
+        print("AtlasPi Application Starting...")
+        
         # Run database initialization once at startup
         initialize_database()
 
         # Start the main application loop
         start_app()
     except Exception as e:
+        print(f"Startup error: {e}")
         logging.error(f"An unexpected error occurred: {e}")
