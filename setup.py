@@ -7,6 +7,7 @@ from utils.logging_config import setup_logging
 from utils.database import initialize_database
 from utils.app import run_application_loop
 from utils.ui import print_logo
+from utils.menu import run_interactive_menu
 from utils.common import strings
 
 
@@ -28,11 +29,19 @@ def main():
         # Setup logging with debug mode
         setup_logging(paths['log_path'], debug_mode=args.debug)
         
+        # Show logo
+        print_logo()
+        
+        # Run interactive menu
+        should_start_service = run_interactive_menu(debug_mode=args.debug)
+        
+        if not should_start_service:
+            return  # User chose to exit
+        
         # Load configuration
         config = load_config(paths['config_path'])
         
-        # Print logo and startup message
-        print_logo()
+        # Log startup message
         logging.info(strings.APP_STARTING)
         
         # Initialize database
