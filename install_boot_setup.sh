@@ -44,7 +44,7 @@ chmod +x update.sh
 chmod +x atlas
 
 # 2. Run initial configuration if needed
-if [ ! -d "$REPO_DIR/env" ]; then
+if [ ! -d "$REPO_DIR/venv" ]; then
     print_status "Running initial configuration..."
     ./configure.sh
 fi

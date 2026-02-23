@@ -7,11 +7,10 @@ Wants=network-online.target
 Type=simple
 User=pi
 WorkingDirectory=%h/atlaspi
-Environment=PATH=%h/atlaspi/env/bin
+Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:%h/atlaspi/venv/bin
 ExecStartPre=%h/atlaspi/update.sh
-ExecStart=%h/atlaspi/env/bin/python %h/atlaspi/setup.py --service
+ExecStart=%h/atlaspi/venv/bin/python %h/atlaspi/setup.py --service
 Restart=always
-RestartSec=10
 RestartSec=10
 
 [Install]

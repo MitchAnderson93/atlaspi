@@ -2,7 +2,7 @@
 # AtlasPi Menu Access Script
 
 REPO_DIR="$HOME/atlaspi"  # Dynamically uses the home directory
-VENV_DIR="$REPO_DIR/env"
+VENV_DIR="$REPO_DIR/venv"
 
 # Check if AtlasPi is installed
 if [ ! -d "$REPO_DIR" ]; then
