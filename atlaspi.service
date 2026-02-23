@@ -1,0 +1,17 @@
+[Unit]
+Description=AtlasPi Task Management System
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=%h/atlaspi
+Environment=PATH=%h/atlaspi/env/bin
+ExecStartPre=%h/atlaspi/update.sh
+ExecStart=%h/atlaspi/env/bin/python %h/atlaspi/setup.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

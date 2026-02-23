@@ -19,11 +19,42 @@ Atlas is a lightweight task management and monitoring system designed for reliab
 
 ## Installation
 
+### Standard Installation
+
 1. **Clone or download the project**
    ```bash
    git clone <repository-url>
    cd atlaspi
    ```
+
+2. **Run the configure script**
+   ```bash
+   chmod +x configure.sh
+   ./configure.sh
+   ```
+
+### Raspberry Pi Boot Setup 
+
+For production Raspberry Pi deployment with auto-start and auto-update:
+
+1. **One-time setup** (run this once on your Pi)
+   ```bash
+   cd atlaspi
+   chmod +x install_boot_setup.sh
+   ./install_boot_setup.sh
+   ```
+
+**This configures your Pi to:**
+- ✅ **Auto-start**: AtlasPi runs automatically on every boot
+- ✅ **Auto-update**: Checks main branch every 30 minutes and updates if needed  
+- ✅ **Easy SSH access**: Just type `atlas` to access the menu when you SSH in
+
+**After setup, you can:**
+- Use `atlas` command from anywhere to access the menu
+- Check service status: `sudo systemctl status atlaspi`
+- View update logs: `tail -f /var/log/atlaspi.log`
+
+### Manual Installation
 
 2. **Create a virtual environment (recommended)**
    ```bash

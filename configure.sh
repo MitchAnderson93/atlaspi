@@ -1,7 +1,7 @@
 #!/bin/bash
 
 REPO_DIR="$HOME/atlaspi"  # Dynamically uses the home directory
-BRANCH="development"      # Updated to use the development branch
+BRANCH="development"             # Use main branch for production
 GIT_REPO="https://github.com/MitchAnderson93/atlaspi.git"
 VENV_DIR="$REPO_DIR/venv"
 

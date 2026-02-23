@@ -1,0 +1,24 @@
+#!/bin/bash
+# AtlasPi Menu Access Script
+
+REPO_DIR="$HOME/atlaspi"  # Dynamically uses the home directory
+VENV_DIR="$REPO_DIR/env"
+
+# Check if AtlasPi is installed
+if [ ! -d "$REPO_DIR" ]; then
+    echo "AtlasPi not found. Please run setup first."
+    exit 1
+fi
+
+# Check if service is running
+if systemctl is-active --quiet atlaspi; then
+    echo "AtlasPi service is running. Connecting to interactive menu..."
+    echo -e "\nPress Ctrl+C to exit the menu and return to shell.\n"
+else
+    echo "AtlasPi service is not running. Starting interactive session..."
+fi
+
+# Sort the environment and run the menu
+cd "$REPO_DIR"
+source "$VENV_DIR/bin/activate"
+python setup.py
