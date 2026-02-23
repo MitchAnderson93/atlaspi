@@ -2,7 +2,7 @@
 # AtlasPi Auto-Update Script
 
 REPO_DIR="$HOME/atlaspi"  # Dynamically uses the home directory
-BRANCH="main"
+BRANCH="development"
 VENV_DIR="$REPO_DIR/env"
 
 # Function to log with timestamp

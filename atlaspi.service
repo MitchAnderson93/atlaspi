@@ -9,10 +9,9 @@ User=pi
 WorkingDirectory=%h/atlaspi
 Environment=PATH=%h/atlaspi/env/bin
 ExecStartPre=%h/atlaspi/update.sh
-ExecStart=%h/atlaspi/env/bin/python %h/atlaspi/setup.py
+ExecStart=%h/atlaspi/env/bin/python %h/atlaspi/setup.py --service
 Restart=always
 RestartSec=10
-Restart=always
 RestartSec=10
 
 [Install]

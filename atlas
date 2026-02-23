@@ -12,13 +12,16 @@ fi
 
 # Check if service is running
 if systemctl is-active --quiet atlaspi; then
-    echo "AtlasPi service is running. Connecting to interactive menu..."
-    echo -e "\nPress Ctrl+C to exit the menu and return to shell.\n"
+    echo "AtlasPi service is running in background."
+    echo "This menu will let you control the service and view status."
+    echo -e "\nPress Ctrl+C to exit and return to shell.\n"
 else
-    echo "AtlasPi service is not running. Starting interactive session..."
+    echo "AtlasPi service is not running."
+    echo "Starting interactive menu session..."
+    echo -e "\nPress Ctrl+C to exit and return to shell.\n"
 fi
 
-# Sort the environment and run the menu
+# Activate the environment and run the menu
 cd "$REPO_DIR"
 source "$VENV_DIR/bin/activate"
 python setup.py
