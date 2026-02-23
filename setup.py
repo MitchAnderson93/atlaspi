@@ -32,8 +32,12 @@ def main():
         if args.service:
             # Run as background service (non-interactive)
             logging.info("Starting AtlasPi in service mode")
+            logging.info(f"Config path: {paths['config_path']}")
             config = load_config(paths['config_path'])
+            logging.info(f"Config loaded: {type(config)}, content: {config}")
+            logging.info(f"About to initialize database with db_path: {paths['db_path']}")
             initialize_database(paths['db_path'], config)
+            logging.info("Database initialized successfully")
             run_application_loop(paths['db_path'], paths['log_path'], debug_mode=args.debug)
         else:
             # Run interactive menu (this now handles everything internally)
