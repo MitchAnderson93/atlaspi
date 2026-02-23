@@ -15,6 +15,7 @@ def main():
     # Parse command line arguments
     parser = argparse.ArgumentParser(description='AtlasPi Task Management System')
     parser.add_argument('--debug', action='store_true', help='Enable debug mode with verbose logging')
+    parser.add_argument('--service', action='store_true', help='Run as background service (non-interactive)')
     args = parser.parse_args()
     
     try:
@@ -28,8 +29,14 @@ def main():
         # Setup logging with debug mode
         setup_logging(paths['log_path'], debug_mode=args.debug)
         
-        # Run interactive menu (this now handles everything internally)
-        run_interactive_menu(debug_mode=args.debug)
+        if args.service:
+            # Run as background service (non-interactive)
+            logging.info("Starting AtlasPi in service mode")
+            initialize_database(paths['db_path'])
+            run_application_loop(paths['db_path'], paths['log_path'], debug_mode=args.debug)
+        else:
+            # Run interactive menu (this now handles everything internally)
+            run_interactive_menu(debug_mode=args.debug)
         
     except Exception as e:
         logging.error(strings.APP_STARTUP_ERROR.format(e))

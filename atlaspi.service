@@ -12,6 +12,8 @@ ExecStartPre=%h/atlaspi/update.sh
 ExecStart=%h/atlaspi/env/bin/python %h/atlaspi/setup.py
 Restart=always
 RestartSec=10
+Restart=always
+RestartSec=10
 
 [Install]
 WantedBy=multi-user.target

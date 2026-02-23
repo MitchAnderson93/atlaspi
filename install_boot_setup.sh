@@ -51,7 +51,8 @@ fi
 
 # 3. Install systemd service
 print_status "Installing systemd service..."
-sudo cp atlaspi.service /etc/systemd/system/
+# Replace USER placeholder in service file before copying
+sed "s/User=pi/User=$USER/g" atlaspi.service | sed "s|%h|$HOME|g" | sudo tee /etc/systemd/system/atlaspi.service > /dev/null
 sudo systemctl daemon-reload
 sudo systemctl enable $SERVICE_NAME
 print_success "Service installed and enabled for boot"
@@ -92,11 +93,18 @@ print_status "Starting AtlasPi service..."
 sudo systemctl start $SERVICE_NAME
 
 # Wait a moment and check status
-sleep 2
+sleep 3
 if systemctl is-active --quiet $SERVICE_NAME; then
     print_success "AtlasPi service is running!"
 else
-    print_error "Failed to start AtlasPi service. Check logs with: journalctl -u $SERVICE_NAME"
+    print_error "Failed to start AtlasPi service."
+    echo ""
+    print_status "To fix this issue:"
+    echo "1. Check the service status: sudo systemctl status atlaspi" 
+    echo "2. Check the logs: journalctl -xeu atlaspi"
+    echo "3. Try rerunning: sudo systemctl restart atlaspi"
+    echo ""
+    print_warning "The service is configured to start on boot, but needs fixing first."
     exit 1
 fi
 
