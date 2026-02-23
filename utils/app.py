@@ -16,9 +16,10 @@ def run_application_loop(db_path, log_path, debug_mode=False, stop_flag=None):
         logging.info(strings.PATHS_LOG_FILE.format(log_path))
         logging.info(strings.PATHS_DATABASE.format(db_path))
     
-    try:
-        loop_count = 0
-        while True:
+    loop_count = 0
+    
+    while True:
+        try:
             # Check if we should stop
             if stop_flag and stop_flag.is_set():
                 logging.info("Service stop requested")
@@ -44,15 +45,16 @@ def run_application_loop(db_path, log_path, debug_mode=False, stop_flag=None):
             # TODO: Add actual task processing here
             # For now, just simulate periodic work
             time.sleep(10)  # Check every 10 seconds
-            # For now, just simulate periodic work
-            time.sleep(10)  # Check every 10 seconds
             
-    except KeyboardInterrupt:
-        logging.info("Service interrupted by Ctrl+C")
-    except Exception as e:
-        logging.error(strings.SERVICE_ERROR.format(e))
-    finally:
-        logging.info("AtlasPi service stopped")
+        except KeyboardInterrupt:
+            logging.info("Service interrupted by Ctrl+C")
+            break
+        except Exception as e:
+            logging.error(strings.SERVICE_ERROR.format(e))
+            # Continue running but wait a bit before retrying
+            time.sleep(5)
+            
+    logging.info("AtlasPi service stopped")
 
 
 def process_scheduled_tasks(db_path):

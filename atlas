@@ -13,15 +13,22 @@ fi
 # Check if service is running
 if systemctl is-active --quiet atlaspi; then
     echo "AtlasPi service is running in background."
-    echo "This menu will let you control the service and view status."
-    echo -e "\nPress Ctrl+C to exit and return to shell.\n"
+    echo ""
+    echo "Service Commands:"
+    echo "  • sudo systemctl status atlaspi    - Check detailed status"
+    echo "  • sudo systemctl stop atlaspi     - Stop the service"  
+    echo "  • sudo systemctl restart atlaspi  - Restart the service"
+    echo "  • tail -f $REPO_DIR/atlaspi.log   - View live logs"
+    echo ""
+    echo "The background service is handling all task automation."
+    echo "Use the commands above to manage it."
 else
     echo "AtlasPi service is not running."
-    echo "Starting interactive menu session..."
+    echo "Starting interactive debug session..."
     echo -e "\nPress Ctrl+C to exit and return to shell.\n"
+    
+    # Activate the environment and run the menu
+    cd "$REPO_DIR"
+    source "$VENV_DIR/bin/activate"
+    python setup.py --debug
 fi
-
-# Activate the environment and run the menu
-cd "$REPO_DIR"
-source "$VENV_DIR/bin/activate"
-python setup.py
