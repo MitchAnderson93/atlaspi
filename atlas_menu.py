@@ -9,10 +9,30 @@ import time
 # Add the atlaspi directory to the path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from utils.menu import run_interactive_menu, show_menu_with_planet
+from utils.menu import run_interactive_menu
 from utils.config import get_config_paths
 from utils.view_tasks import view_tasks
 from utils.common import strings
+
+def show_atlas_header():
+    """Display just the Atlas ASCII art header without service status"""
+    ascii_art = '''                               .
+                    ..###****++=-..
+                 .#%%%%%####**+==-:.
+              .#%%%%%%%%%###**+==-: .
+             .#%%%%%%%%%%###**+==-:. .
+              ##%%%%%%%%%+++++++==-:.
+           .*#%%%%%%++=====+++=--:.  .
+              **####+========++=--:.
+             .+***+==***===+==--:.   .
+              .=+++=***==+==--:..   .
+                 .-======---::..   .
+                    ..:=+:...    ..
+                               .
+                    A T L A S
+
+'''
+    print(ascii_art)
 
 def check_systemd_service_running():
     """Check if the atlaspi systemd service is running"""
@@ -80,13 +100,13 @@ def view_live_logs():
 def run_systemd_aware_menu():
     """Run menu system with systemd service awareness"""
     
-    systemd_service_running = check_systemd_service_running()
-    
-    if systemd_service_running:
-        # Systemd service is running - show service management menu
-        while True:
+    while True:
+        systemd_service_running = check_systemd_service_running()
+        
+        if systemd_service_running:
+            # Systemd service is running - show service management menu
             # Show the same ASCII art header as the regular menu
-            show_menu_with_planet()
+            show_atlas_header()
             print("AtlasPi service is running in background")
             
             print("\nSelect an option:")
@@ -117,11 +137,8 @@ def run_systemd_aware_menu():
                     
                 elif choice == "5":
                     stop_systemd_service()
-                    # After stopping, check if we should switch to interactive mode
-                    if not check_systemd_service_running():
-                        print("\nSystemd service stopped. Switching to interactive mode...")
-                        time.sleep(1)
-                        break  # Exit this loop and fall through to interactive mode
+                    # After stopping, re-check status in next loop iteration
+                    continue
                     
                 elif choice == "6":
                     print("Goodbye!")
@@ -133,13 +150,13 @@ def run_systemd_aware_menu():
             except KeyboardInterrupt:
                 print("\nGoodbye!")
                 return
-    
-    # If systemd service is not running, use the regular interactive menu
-    if not check_systemd_service_running():
-        print("AtlasPi service is not running.")
-        print("Starting interactive debug session...")
-        print("\nPress Ctrl+C to exit and return to shell.\n")
-        run_interactive_menu(debug_mode=True)
+        else:
+            # If systemd service is not running, use the regular interactive menu
+            print("AtlasPi service is not running.")
+            print("Starting interactive debug session...")
+            print("\nPress Ctrl+C to exit and return to shell.\n")
+            run_interactive_menu(debug_mode=True)
+            return
 
 if __name__ == "__main__":
     run_systemd_aware_menu()
