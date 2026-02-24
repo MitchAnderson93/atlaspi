@@ -12,16 +12,82 @@ fi
 
 # Check if service is running
 if systemctl is-active --quiet atlaspi; then
-    echo "AtlasPi service is running in background."
+    echo "AtlasPi service is running in background"
     echo ""
-    echo "Service Commands:"
-    echo "  • sudo systemctl status atlaspi    - Check detailed status"
-    echo "  • sudo systemctl stop atlaspi     - Stop the service"  
-    echo "  • sudo systemctl restart atlaspi  - Restart the service"
-    echo "  • tail -f $REPO_DIR/atlaspi.log   - View live logs"
-    echo ""
-    echo "The background service is handling all task automation."
-    echo "Use the commands above to manage it."
+    
+    while true; do
+        echo "Select an option:"
+        echo "  1. View database tasks"
+        echo "  2. Check service status"
+        echo "  3. View live logs"
+        echo "  4. Restart service"
+        echo "  5. Stop service"
+        echo "  6. Exit"
+        echo ""
+        read -p "Enter choice [1-6]: " choice
+        
+        case $choice in
+            1)
+                echo ""
+                echo "Current Tasks in Database:"
+                echo "================================"
+                cd "$REPO_DIR"
+                source "$VENV_DIR/bin/activate"
+                python3 utils/view_tasks.py
+                echo ""
+                read -p "Press Enter to continue..."
+                echo ""
+                ;;
+            2)
+                echo ""
+                sudo systemctl status atlaspi
+                echo ""
+                read -p "Press Enter to continue..."
+                echo ""
+                ;;
+            3)
+                echo ""
+                echo "Live logs (Press Ctrl+C to stop):"
+                echo "====================================="
+                tail -f "$REPO_DIR/atlaspi.log"
+                echo ""
+                ;;
+            4)
+                echo ""
+                echo "Restarting AtlasPi service..."
+                sudo systemctl restart atlaspi
+                sleep 2
+                if systemctl is-active --quiet atlaspi; then
+                    echo "Service restarted successfully"
+                else
+                    echo "Service failed to restart"
+                    sudo systemctl status atlaspi --no-pager
+                fi
+                echo ""
+                read -p "Press Enter to continue..."
+                echo ""
+                ;;
+            5)
+                echo ""
+                echo "Stopping AtlasPi service..."
+                sudo systemctl stop atlaspi
+                echo "Service stopped"
+                echo ""
+                read -p "Press Enter to continue..."
+                echo ""
+                break
+                ;;
+            6)
+                echo "Goodbye!"
+                exit 0
+                ;;
+            *)
+                echo ""
+                echo "Invalid choice. Please enter 1-6."
+                echo ""
+                ;;
+        esac
+    done
 else
     echo "AtlasPi service is not running."
     echo "Starting interactive debug session..."

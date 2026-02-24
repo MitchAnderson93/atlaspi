@@ -5,8 +5,9 @@ Atlas is a lightweight task management and monitoring system designed for reliab
 ## Features
 
 - **Task scheduling**: Configure and execute tasks based on time conditions
-- **Interactive menu system**: Simple terminal menu to control the service
-- **Live log monitoring**: View application logs in real-time with tail -f functionality
+- **Interactive menu system**: Enhanced terminal menu with task database viewer
+- **Live log monitoring**: View application logs in real-time with tail -f functionality  
+- **Task database viewer**: Inspect all configured tasks, status, and execution history
 - **Debug mode**: Enhanced logging and diagnostic tools for development
 - **Zero dependencies**: Uses only Python standard library for maximum compatibility
 - **SQLite database**: Lightweight, embedded database for task persistence
@@ -19,7 +20,60 @@ Atlas is a lightweight task management and monitoring system designed for reliab
 
 ## Installation
 
-### Standard Installation
+### Fresh Raspberry Pi OS Lite Setup
+
+Fresh Pi installation from a new OS image? Follow these steps:
+
+#### 1. **Initial Pi Configuration**
+```bash
+# Connect to wifi (if not done during image setup)
+sudo raspi-config
+# Navigate to: System Options > Wireless LAN > Enter SSID and password
+
+# Update system packages
+sudo apt update && sudo apt upgrade -y
+
+# Install required packages
+sudo apt install -y git python3 python3-pip python3-venv
+
+# Optional: Set timezone
+sudo timedatectl set-timezone Australia/Melbourne
+```
+
+#### 2. **Download AtlasPi Source**
+```bash
+# Clone the repository
+cd ~
+git clone https://github.com/MitchAnderson93/atlaspi.git
+cd atlaspi
+```
+
+#### 3. **Complete Pi Setup (One Command)**
+```bash
+# Run the automated setup (configures everything)
+chmod +x install_boot_setup.sh
+./install_boot_setup.sh
+```
+
+**This configures your Pi to:**
+- **Auto-start**: AtlasPi runs automatically on every boot
+- **Auto-update**: Checks development branch every 30 minutes and updates if needed  
+- **Easy SSH access**: Just type `atlas` to access the menu when you SSH in
+
+#### 4. **Verify Installation**
+```bash
+# Check service status
+sudo systemctl status atlaspi
+
+# Access the menu
+atlas
+```
+
+---
+
+### Standard Installation (Development/Manual)
+
+For development or manual installation without auto-start:
 
 1. **Clone or download the project**
    ```bash
@@ -33,26 +87,13 @@ Atlas is a lightweight task management and monitoring system designed for reliab
    ./configure.sh
    ```
 
-### Raspberry Pi Boot Setup 
+### Post-Installation Commands
 
-For production Raspberry Pi deployment with auto-start and auto-update:
-
-1. **One-time setup** (run this once on your Pi)
-   ```bash
-   cd atlaspi
-   chmod +x install_boot_setup.sh
-   ./install_boot_setup.sh
-   ```
-
-**This configures your Pi to:**
-- ✅ **Auto-start**: AtlasPi runs automatically on every boot
-- ✅ **Auto-update**: Checks main branch every 30 minutes and updates if needed  
-- ✅ **Easy SSH access**: Just type `atlas` to access the menu when you SSH in
-
-**After setup, you can:**
-- Use `atlas` command from anywhere to access the menu
-- Check service status: `sudo systemctl status atlaspi`
-- View update logs: `tail -f /var/log/atlaspi.log`
+After setup, you can manage AtlasPi with:
+- **Access menu**: `atlas`
+- **Check service**: `sudo systemctl status atlaspi`
+- **View logs**: `tail -f ~/atlaspi/atlaspi.log`
+- **Manual updates**: `~/atlaspi/update.sh`
 
 ### Manual Installation
 
@@ -69,9 +110,26 @@ For production Raspberry Pi deployment with auto-start and auto-update:
 
 ## Usage
 
+### Atlas Menu System
+
+Access the AtlasPi management interface:
+```bash
+atlas
+```
+
+**When service is running**, you get an interactive menu with options to:
+- **View database tasks** - See all configured tasks and their status
+- **Check service status** - Detailed systemd service information  
+- **View live logs** - Real-time log monitoring with tail -f
+- **Restart service** - Clean service restart with status verification
+- **Stop service** - Gracefully stop the background service
+- **Exit** - Return to shell
+
+**When service is stopped**, atlas automatically starts an interactive debug session.
+
 ### Basic Operation
 
-Start Atlas with the interactive menu:
+Start Atlas with the interactive menu (if service not running):
 ```bash
 python3 setup.py
 ```
@@ -123,19 +181,25 @@ Example configuration:
 
 ```
 atlaspi/
-├── setup.py              # Main application entry point
+├── setup.py                   # Main application entry point
+├── atlas                      # CLI management interface
+
+├── configure.sh              # Initial setup script
+├── update.sh                 # Auto-update script
+├── install_boot_setup.sh     # Complete Pi deployment script
 ├── config/
-│   └── default_config.json    # Task configuration
+│   └── default_config.json   # Task configuration
 ├── utils/
-│   ├── app.py             # Core application logic
-│   ├── config.py          # Configuration management
-│   ├── database.py        # SQLite database operations
-│   ├── logging_config.py  # Logging setup
-│   ├── menu.py           # Interactive menu system
-│   ├── ui.py             # User interface components
+│   ├── app.py                # Core application logic
+│   ├── config.py             # Configuration management
+│   ├── database.py           # SQLite database operations
+│   ├── logging_config.py     # Logging setup
+│   ├── menu.py              # Interactive menu system
+│   ├── ui.py                # User interface components
+│   ├── view_tasks.py        # Database task viewer utility
 │   └── common/
-│       └── strings.py     # Centralized text constants
-└── tests/                 # Unit tests
+│       └── strings.py        # Centralized text constants
+└── tests/                    # Unit tests
 ```
 
 ## Development
