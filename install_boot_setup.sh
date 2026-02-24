@@ -42,6 +42,7 @@ print_status "Setting up script permissions..."
 chmod +x configure.sh
 chmod +x update.sh
 chmod +x atlas
+chmod +x atlas_menu.py
 
 # 2. Run initial configuration if needed
 if [ ! -d "$REPO_DIR/venv" ]; then

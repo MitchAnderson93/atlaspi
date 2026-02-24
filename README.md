@@ -95,18 +95,70 @@ After setup, you can manage AtlasPi with:
 - **View logs**: `tail -f ~/atlaspi/atlaspi.log`
 - **Manual updates**: `~/atlaspi/update.sh`
 
-### Manual Installation
+---
 
-2. **Create a virtual environment (recommended)**
-   ```bash
-   python3 -m venv env
-   source env/bin/activate  # On Windows: env\Scripts\activate
-   ```
+## Updates & Development
 
-3. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
+### Manual Update Process
+
+When you need to pull the latest code changes manually:
+
+#### 1. **Pre-Update Steps**
+```bash
+# Stop service to prevent conflicts
+sudo systemctl stop atlaspi
+
+# Check for local modifications
+cd ~/atlaspi
+git status
+```
+
+#### 2. **Pull Updates**
+```bash
+# Pull latest changes
+git pull origin development
+
+# Clear Python cache (important!)
+find . -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
+find . -name "*.pyc" -delete 2>/dev/null || true
+
+# Fix script permissions (git doesn't preserve execute bits)  
+chmod +x atlas configure.sh update.sh install_boot_setup.sh atlas_menu.py
+```
+
+#### 3. **Test Before Restarting Service**
+```bash
+# Test atlas command manually
+./atlas
+
+# Test task viewer utility
+source venv/bin/activate
+python3 utils/view_tasks.py
+deactivate
+```
+
+#### 4. **Restart Service**
+```bash
+# If manual tests work, restart service
+sudo systemctl start atlaspi
+sudo systemctl status atlaspi
+
+# Verify with menu
+atlas
+```
+
+### Troubleshooting Updates
+
+If you encounter issues:
+```bash
+# Reset to clean state
+sudo systemctl stop atlaspi
+git reset --hard origin/development  
+chmod +x *.sh atlas
+sudo systemctl start atlaspi
+```
+
+**Important:** Always stop the systemd service before manual testing to avoid dual-service conflicts.
 
 ## Usage
 
@@ -182,8 +234,8 @@ Example configuration:
 ```
 atlaspi/
 ├── setup.py                   # Main application entry point
-├── atlas                      # CLI management interface
-
+├── atlas                      # CLI management interface (bash launcher)
+├── atlas_menu.py             # Python menu system with ASCII art
 ├── configure.sh              # Initial setup script
 ├── update.sh                 # Auto-update script
 ├── install_boot_setup.sh     # Complete Pi deployment script
